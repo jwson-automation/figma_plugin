@@ -29,6 +29,36 @@ Claude Code ──stdio──▶ MCP Server (Node.js, port 3055)
                        Figma Main Thread (code.ts) ──▶ Figma Plugin API
 ```
 
+## Quick Start
+
+```bash
+# 1. Install & build
+npm install && npm run build
+cd mcp-server && npm install && cd ..
+
+# 2. Register plugin in Figma
+#    Plugins → Development → Import plugin from manifest... → select manifest.json
+```
+
+### 3. Configure your editor
+
+**Option A — Use skills (automatic, Claude Code only):**
+
+This repo includes setup skills under `.claude/skills/`. Run as slash commands inside Claude Code:
+
+```
+/setup-claude-code                 # Claude Code (stdio, recommended)
+/setup-vscode                      # VS Code (.vscode/mcp.json, SSE)
+/setup-vscode --cursor             # Cursor (~/.cursor/mcp.json, SSE)
+```
+
+**Option B — Manual setup:**
+
+| Editor | What to do |
+|--------|------------|
+| **Claude Code** | The `.mcp.json` at the project root is auto-detected. Just open this project in Claude Code and restart — no config needed. For global access from any project, see [step 4](#4-connect-to-claude-code-stdio-mode--recommended). |
+| **VS Code / Cursor** | Start the server in SSE mode, then point your editor at `http://localhost:3100/sse`. See [step 4-1](#4-1-sse-mode-for-other-mcp-clients). |
+
 ## Setup
 
 ### 1. Build the Plugin
@@ -38,12 +68,11 @@ npm install
 npm run build
 ```
 
-### 2. Build the MCP Server
+### 2. Install MCP Server Dependencies
 
 ```bash
 cd mcp-server
 npm install
-npm run build
 ```
 
 ### 3. Register the Plugin in Figma
@@ -52,20 +81,34 @@ npm run build
 2. **Plugins** → **Development** → **Import plugin from manifest...**
 3. Select `manifest.json`
 
-### 4. Configure Claude Code MCP
+### 4. Connect to Claude Code (stdio mode — recommended)
 
-The `.mcp.json` at the project root is picked up automatically.
-**After cloning, update the `<path>` placeholder in `.mcp.json` to your actual project path** (e.g., `/Users/you/projects/figma-mcp-bridge`).
+> **How it works:** Claude Code does NOT connect to a running server. Instead, it **spawns the MCP server process itself** and communicates via stdin/stdout (stdio). You do NOT need to start the server manually — just add the configuration and restart Claude Code.
 
-For global registration, add to `~/.claude/mcp.json`:
+**Option A — Project-level (zero config after clone):**
+
+This repo already includes `.mcp.json` at the project root with relative paths. If you open this project directory in Claude Code, the MCP server is recognized automatically. **No additional setup needed.**
+
+```
+your-project/
+├── .mcp.json          ← Claude Code auto-detects this
+├── mcp-server/
+│   └── src/index.ts
+```
+
+Just make sure you've run `cd mcp-server && npm install` first.
+
+**Option B — Global registration (use from any project):**
+
+Add to `~/.claude/mcp.json` with **absolute paths**:
 
 ```json
 {
   "mcpServers": {
     "figma-bridge": {
       "command": "node",
-      "args": ["--import", "tsx/dist/esm", "<path>/mcp-server/src/index.ts"],
-      "cwd": "<path>/mcp-server",
+      "args": ["--import", "tsx/dist/esm", "<absolute-path>/mcp-server/src/index.ts"],
+      "cwd": "<absolute-path>/mcp-server",
       "env": {
         "FIGMA_API_TOKEN": "<your-figma-token>"
       }
@@ -74,17 +117,57 @@ For global registration, add to `~/.claude/mcp.json`:
 }
 ```
 
-> `cwd` is required — without it `tsx` cannot be resolved.  
+Replace `<absolute-path>` with the actual path to this repo (e.g., `/Users/you/figma-mcp-bridge` or `C:/Users/you/figma-mcp-bridge`).
+
+> `cwd` is required — without it `tsx` cannot be resolved.
 > `FIGMA_API_TOKEN` is only needed for comment fetch/reply features.
+
+### 4-1. SSE Mode (for other MCP clients)
+
+Some MCP clients (e.g., Cursor, certain IDE extensions) don't support stdio and require a running HTTP server. Use **SSE (Server-Sent Events) mode** for these clients.
+
+> **Key difference:** In stdio mode, Claude Code starts the server automatically. In SSE mode, **you must start the server yourself** before connecting.
+
+**Step 1 — Start the server:**
+
+```bash
+cd mcp-server
+
+# Linux / macOS
+MCP_TRANSPORT=sse npm start
+
+# Windows (PowerShell)
+$env:MCP_TRANSPORT="sse"; npm start
+
+# Windows (cmd)
+set MCP_TRANSPORT=sse && npm start
+```
+
+The server will listen at `http://localhost:3100/sse`. Change the port with `MCP_SSE_PORT` env var.
+
+**Step 2 — Configure your MCP client:**
+
+```json
+{
+  "mcpServers": {
+    "figma-bridge": {
+      "url": "http://localhost:3100/sse"
+    }
+  }
+}
+```
+
+> The WebSocket bridge for the Figma plugin (port 3055) runs in both modes.
 
 ## Usage
 
 1. Open a file in Figma Desktop
 2. **Plugins** → **Development** → **MCP Bridge**
 3. Confirm **green dot + "MCP server connected"** in the plugin panel
-4. Call tools from Claude Code
+4. Call tools from Claude Code (or your MCP client)
 
-> The MCP server starts automatically when Claude Code launches.
+> In stdio mode, the MCP server starts automatically when Claude Code launches.
+> In SSE mode, make sure the server is already running.
 
 ## MCP Tools
 
@@ -297,6 +380,7 @@ Reload in Figma via **Plugins** → **Development** → **Reload plugin**.
 | "Plugin is not connected" | Re-run the MCP Bridge plugin in Figma |
 | New parameters not showing in MCP tools | Run `cd mcp-server && npm run build`, then `/mcp` to reconnect |
 | Comment fetch fails | Check `FIGMA_API_TOKEN` environment variable |
+| "Cannot connect to MCP server" | Do NOT run the server manually. Add the config to `mcp.json` and restart Claude Code — it spawns the server automatically via stdio. If your client doesn't support stdio, use SSE mode (see 4-1). |
 
 ## Changing the Port
 

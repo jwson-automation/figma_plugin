@@ -5,9 +5,9 @@
       "args": [
         "--import",
         "tsx/dist/esm",
-        "src/index.ts"
+        "mcp-server/src/index.ts"
       ],
-      "cwd": "<path>/mcp-server"
+      "cwd": "mcp-server"
     }
   }
 }

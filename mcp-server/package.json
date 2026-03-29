@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node --import tsx/esm src/index.ts",
+    "start": "node --import tsx/dist/esm src/index.ts",
+    "start:sse": "MCP_TRANSPORT=sse node --import tsx/dist/esm src/index.ts",
     "build": "tsc",
     "start:built": "node dist/index.js"
   },

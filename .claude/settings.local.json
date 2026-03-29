@@ -6,7 +6,13 @@
       "Bash(curl:*)",
       "Bash(python:*)",
       "Bash(cd:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(find C:/Users/sonju/Documents/projects/figma_plugin/mcp-server/node_modules/@modelcontextprotocol/sdk -name *.js -path */server/*)",
+      "Bash(find C:/Users/sonju/Documents/projects/figma_plugin/mcp-server/node_modules/@modelcontextprotocol/sdk -name sse* -o -name streamable*)",
+      "Bash(npx tsc:*)",
+      "Bash(node scripts/setup-claude-code.mjs --token test-token-123)",
+      "WebSearch",
+      "Bash(xxd \"C:/Users/sonju/Documents/projects/figma_plugin/README.ko.md\")"
     ]
   }
 }

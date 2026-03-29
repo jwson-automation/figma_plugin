@@ -29,6 +29,41 @@ Claude Code ──stdio──▶ MCP Server (Node.js, port 3055)
                        Figma Main Thread (code.ts) ──▶ Figma Plugin API
 ```
 
+## クイックスタート
+
+```bash
+# 1. インストール & ビルド
+npm install && npm run build
+cd mcp-server && npm install && cd ..
+
+# 2. Figmaにプラグインを登録
+#    Plugins → Development → Import plugin from manifest... → manifest.json を選択
+
+# 3. エディターの自動設定（Claude Code内でスラッシュコマンドとして実行）
+/setup-claude-code                 # Claude Code (stdio、推奨)
+/setup-vscode                      # VS Code (.vscode/mcp.json、SSE)
+/setup-vscode --cursor             # Cursor (~/.cursor/mcp.json、SSE)
+```
+
+### 3. エディターの設定
+
+**方法A — スキルを使用（自動、Claude Code専用）：**
+
+このリポジトリには `.claude/skills/` にセットアップスキルが含まれています。Claude Code内でスラッシュコマンドとして実行：
+
+```
+/setup-claude-code                 # Claude Code (stdio、推奨)
+/setup-vscode                      # VS Code (.vscode/mcp.json、SSE)
+/setup-vscode --cursor             # Cursor (~/.cursor/mcp.json、SSE)
+```
+
+**方法B — 手動設定：**
+
+| エディター | 方法 |
+|------------|------|
+| **Claude Code** | プロジェクトルートの `.mcp.json` が自動認識されます。このプロジェクトをClaude Codeで開いて再起動するだけで使用可能。他のプロジェクトからグローバルに使用するには[ステップ4](#4-claude-code接続stdioモード--推奨)を参照。 |
+| **VS Code / Cursor** | SSEモードでサーバーを起動し、エディターで `http://localhost:3100/sse` に接続。[ステップ4-1](#4-1-sseモード他のmcpクライアント用)を参照。 |
+
 ## セットアップ
 
 ### 1. プラグインのビルド
@@ -38,12 +73,11 @@ npm install
 npm run build
 ```
 
-### 2. MCPサーバーのビルド
+### 2. MCPサーバーの依存関係インストール
 
 ```bash
 cd mcp-server
 npm install
-npm run build
 ```
 
 ### 3. Figmaへのプラグイン登録
@@ -52,20 +86,34 @@ npm run build
 2. **Plugins** → **Development** → **Import plugin from manifest...**
 3. `manifest.json` を選択
 
-### 4. Claude Code MCP設定
+### 4. Claude Code接続（stdioモード — 推奨）
 
-プロジェクトルートの `.mcp.json` は自動的に認識されます。
-**クローン後、`.mcp.json` 内の `<パス>` プレースホルダーを実際のプロジェクトパスに変更してください**（例：`/Users/you/projects/figma-mcp-bridge`）。
+> **仕組み:** Claude Codeは起動中のサーバーに接続するのではありません。Claude Codeが**MCPサーバープロセスを自ら起動**し、stdin/stdout（stdio）で通信します。サーバーを手動で起動する必要はありません — 設定を追加してClaude Codeを再起動するだけです。
 
-グローバル登録は `~/.claude/mcp.json` に追加：
+**方法A — プロジェクトレベル（クローン後すぐ使用可能）：**
+
+このリポジトリには、プロジェクトルートに相対パスの `.mcp.json` が含まれています。Claude Codeでこのプロジェクトディレクトリを開くと、MCPサーバーが自動認識されます。**追加設定は不要です。**
+
+```
+your-project/
+├── .mcp.json          ← Claude Codeが自動認識
+├── mcp-server/
+│   └── src/index.ts
+```
+
+事前に `cd mcp-server && npm install` を実行しておいてください。
+
+**方法B — グローバル登録（他のプロジェクトからも使用）：**
+
+`~/.claude/mcp.json` に**絶対パス**で追加：
 
 ```json
 {
   "mcpServers": {
     "figma-bridge": {
       "command": "node",
-      "args": ["--import", "tsx/dist/esm", "<パス>/mcp-server/src/index.ts"],
-      "cwd": "<パス>/mcp-server",
+      "args": ["--import", "tsx/dist/esm", "<絶対パス>/mcp-server/src/index.ts"],
+      "cwd": "<絶対パス>/mcp-server",
       "env": {
         "FIGMA_API_TOKEN": "<your-figma-token>"
       }
@@ -74,17 +122,57 @@ npm run build
 }
 ```
 
-> `cwd` は必須です。ないと `tsx` モジュールが見つかりません。  
+`<絶対パス>` を実際のパスに置き換えてください（例：`/Users/you/figma-mcp-bridge` または `C:/Users/you/figma-mcp-bridge`）。
+
+> `cwd` は必須です。ないと `tsx` モジュールが見つかりません。
 > `FIGMA_API_TOKEN` はコメントの取得・返信機能にのみ必要です。
+
+### 4-1. SSEモード（他のMCPクライアント用）
+
+一部のMCPクライアント（Cursor、特定のIDE拡張機能など）はstdioをサポートせず、HTTPサーバーへの接続が必要です。その場合は**SSE（Server-Sent Events）モード**を使用してください。
+
+> **重要な違い:** stdioモードではClaude Codeがサーバーを自動起動します。SSEモードでは**サーバーを手動で起動**してからクライアントを接続する必要があります。
+
+**Step 1 — サーバーを起動：**
+
+```bash
+cd mcp-server
+
+# Linux / macOS
+MCP_TRANSPORT=sse npm start
+
+# Windows (PowerShell)
+$env:MCP_TRANSPORT="sse"; npm start
+
+# Windows (cmd)
+set MCP_TRANSPORT=sse && npm start
+```
+
+サーバーは `http://localhost:3100/sse` で待機します。ポート変更は `MCP_SSE_PORT` 環境変数。
+
+**Step 2 — MCPクライアントを設定：**
+
+```json
+{
+  "mcpServers": {
+    "figma-bridge": {
+      "url": "http://localhost:3100/sse"
+    }
+  }
+}
+```
+
+> Figmaプラグイン用WebSocketブリッジ（ポート3055）は両モードで動作します。
 
 ## 使い方
 
 1. Figma Desktopでファイルを開く
 2. **Plugins** → **Development** → **MCP Bridge** を起動
-3. プラグインパネルに **緑のドット + "MCP サーバー接続中"** を確認
-4. Claude Codeからツールを呼び出す
+3. プラグインパネルに **緑のドット + "MCPサーバー接続中"** を確認
+4. Claude Code（またはMCPクライアント）からツールを呼び出す
 
-> MCPサーバーはClaude Code起動時に自動起動します。
+> stdioモード：Claude Code起動時にMCPサーバーが自動起動します。
+> SSEモード：サーバーが起動済みであることを確認してください。
 
 ## MCPツール一覧
 
@@ -297,6 +385,7 @@ Figmaでの反映は **Plugins** → **Development** → **Reload plugin**。
 | 「プラグインが接続されていません」 | FigmaでMCP Bridgeプラグインを再起動 |
 | MCPツールに新しいパラメータが反映されない | `cd mcp-server && npm run build` の後、`/mcp` で再接続 |
 | コメント取得が失敗する | `FIGMA_API_TOKEN` 環境変数を確認 |
+| 「MCPサーバーに接続できない」 | サーバーを手動で起動しないでください。`mcp.json`に設定を追加してClaude Codeを再起動すれば、stdioで自動起動されます。stdioをサポートしないクライアントはSSEモードを使用してください（4-1参照）。 |
 
 ## ポート変更
 
