@@ -61,7 +61,7 @@ npm run build
   "mcpServers": {
     "figma-bridge": {
       "command": "node",
-      "args": ["--import", "tsx/esm", "<パス>/mcp-server/src/index.ts"],
+      "args": ["--import", "tsx/dist/esm", "<パス>/mcp-server/src/index.ts"],
       "cwd": "<パス>/mcp-server",
       "env": {
         "FIGMA_API_TOKEN": "<your-figma-token>"

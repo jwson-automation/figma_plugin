@@ -61,7 +61,7 @@ The `.mcp.json` at the project root is picked up automatically. For global regis
   "mcpServers": {
     "figma-bridge": {
       "command": "node",
-      "args": ["--import", "tsx/esm", "<path>/mcp-server/src/index.ts"],
+      "args": ["--import", "tsx/dist/esm", "<path>/mcp-server/src/index.ts"],
       "cwd": "<path>/mcp-server",
       "env": {
         "FIGMA_API_TOKEN": "<your-figma-token>"
