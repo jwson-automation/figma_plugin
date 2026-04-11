@@ -2,7 +2,7 @@
 
 > **Language / 언어 / 言語:** [English](./README.md) | [한국어](./README.ko.md)
 
-FigmaのデザインデータをClaude Codeから直接取得できるMCP（Model Context Protocol）ブリッジプラグインです。
+FigmaのデザインデータをClaude Code や WindsurfなどのAIコードエディタから直接取得できるMCP（Model Context Protocol）ブリッジプラグインです。
 **Figma Desktop Plugin API** を使用して、**現在開いているファイル**のノード・スタイル・コメント・画像をリアルタイムで抽出します。
 
 ## なぜ必要か
@@ -82,9 +82,9 @@ npm run build
 1. Figma Desktopでファイルを開く
 2. **Plugins** → **Development** → **MCP Bridge** を起動
 3. プラグインパネルに **緑のドット + "MCP サーバー接続中"** を確認
-4. Claude Codeからツールを呼び出す
+4. AIコードエディタからツールを呼び出す
 
-> MCPサーバーはClaude Code起動時に自動起動します。
+> MCPサーバーはAIコードエディタ起動時に自動起動します。
 
 ## MCPツール一覧
 

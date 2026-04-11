@@ -2,7 +2,7 @@
 
 > **Language / 언어 / 言語:** [한국어](./README.ko.md) | [日本語](./README.ja.md)
 
-A bridge plugin that lets you query Figma design data directly from Claude Code via MCP (Model Context Protocol).
+A bridge plugin that lets you query Figma design data directly from Claude Code and Windsurf via MCP (Model Context Protocol).
 Uses the **Figma Desktop Plugin API** to extract nodes, styles, comments, and images from the **currently open file** in real time.
 
 ## Why This Exists
@@ -82,9 +82,9 @@ For global registration, add to `~/.claude/mcp.json`:
 1. Open a file in Figma Desktop
 2. **Plugins** → **Development** → **MCP Bridge**
 3. Confirm **green dot + "MCP server connected"** in the plugin panel
-4. Call tools from Claude Code
+4. Call tools from AI Code Editor
 
-> The MCP server starts automatically when Claude Code launches.
+> The MCP server starts automatically when AI Code Editor launches.
 
 ## MCP Tools
 

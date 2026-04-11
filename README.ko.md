@@ -2,7 +2,7 @@
 
 > **Language / 언어 / 言語:** [English](./README.md) | [日本語](./README.ja.md)
 
-Figma 디자인 데이터를 Claude Code에서 직접 조회할 수 있는 MCP(Model Context Protocol) 브릿지.
+Figma 디자인 데이터를 Claude Code 및 Windsurf에서 직접 조회할 수 있는 MCP(Model Context Protocol) 브릿지.
 Figma Desktop Plugin API를 통해 **실시간으로 열려 있는 파일**의 노드, 스타일, 댓글, 이미지를 추출합니다.
 
 ## 왜 필요한가
@@ -82,9 +82,9 @@ npm run build
 1. Figma Desktop에서 파일 열기
 2. **Plugins** → **Development** → **MCP Bridge** 실행
 3. 플러그인 패널에 **녹색 점 + "MCP 서버 연결됨"** 확인
-4. Claude Code에서 도구 호출
+4. AI 코드 에디터에서 도구 호출
 
-> MCP 서버는 Claude Code 시작 시 자동 실행됩니다.
+> MCP 서버는 AI 코드 에디터 시작 시 자동 실행됩니다.
 
 ## MCP 도구
 
