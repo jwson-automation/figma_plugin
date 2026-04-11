@@ -52,7 +52,8 @@ npm run build
 2. **Plugins** → **Development** → **Import plugin from manifest...**
 3. `manifest.json` 선택
 
-### 4. Claude Code MCP 설정
+### 4. MCP 설정
+#### Claude Code
 
 프로젝트 루트의 `.mcp.json`이 자동 인식됩니다.
 **클론 후 `.mcp.json`의 `<경로>` 플레이스홀더를 실제 프로젝트 경로로 수정하세요** (예: `/Users/you/projects/figma-mcp-bridge`).
@@ -75,6 +76,35 @@ npm run build
 ```
 
 > `cwd`는 필수. 없으면 `tsx` 모듈을 찾지 못합니다.
+> `FIGMA_API_TOKEN`은 댓글 조회/답글 기능에만 필요합니다.
+
+#### Windsurf
+
+전역 등록 방법:
+
+1. **Windsurf** → **Preferences** → **Windsurf Settings** → **Cascade** → **Open MCP Registry**
+2. 톱니바퀴 아이콘 클릭하여 `mcp_config.json` 열기
+3. 다음 설정 추가:
+
+```json
+{
+  "mcpServers": {
+    "figma-bridge": {
+      "command": "node",
+      "args": [
+        "--import",
+        "<경로>/mcp-server/node_modules/tsx/dist/esm/index.mjs",
+        "<경로>/mcp-server/src/index.ts"
+      ],
+      "env": {
+        "FIGMA_API_TOKEN": "<your-figma-token>"
+      }
+    }
+  }
+}
+```
+
+> Windsurf는 `cwd` 속성을 지원하지 않으므로 `tsx` 모듈의 전체 경로를 `args`에 지정합니다.  
 > `FIGMA_API_TOKEN`은 댓글 조회/답글 기능에만 필요합니다.
 
 ## 사용 방법

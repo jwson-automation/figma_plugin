@@ -52,7 +52,9 @@ npm run build
 2. **Plugins** → **Development** → **Import plugin from manifest...**
 3. Select `manifest.json`
 
-### 4. Configure Claude Code MCP
+### 4. Configure MCP
+
+#### Claude Code
 
 The `.mcp.json` at the project root is picked up automatically.
 **After cloning, update the `<path>` placeholder in `.mcp.json` to your actual project path** (e.g., `/Users/you/projects/figma-mcp-bridge`).
@@ -75,6 +77,35 @@ For global registration, add to `~/.claude/mcp.json`:
 ```
 
 > `cwd` is required — without it `tsx` cannot be resolved.  
+> `FIGMA_API_TOKEN` is only needed for comment fetch/reply features.
+
+#### Windsurf
+
+For global registration:
+
+1. **Windsurf** → **Preferences** → **Windsurf Settings** → **Cascade** → **Open MCP Registry**
+2. Click the gear icon to open `mcp_config.json`
+3. Add the following configuration:
+
+```json
+{
+  "mcpServers": {
+    "figma-bridge": {
+      "command": "node",
+      "args": [
+        "--import",
+        "<path>/mcp-server/node_modules/tsx/dist/esm/index.mjs",
+        "<path>/mcp-server/src/index.ts"
+      ],
+      "env": {
+        "FIGMA_API_TOKEN": "<your-figma-token>"
+      }
+    }
+  }
+}
+```
+
+> Windsurf does not support the `cwd` property, so specify the full path to the `tsx` module in `args`.  
 > `FIGMA_API_TOKEN` is only needed for comment fetch/reply features.
 
 ## Usage
