@@ -236,7 +236,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     },
     {
       name: 'figma_export_node',
-      description: 'Figma 노드를 PNG/SVG/JPG 이미지로 내보냅니다 (base64 반환). 실제 디자인과 구현 비교에 활용.',
+      description: 'Figma 노드를 PNG/SVG/JPG로 내보냅니다. PNG/JPG는 base64 이미지, SVG는 텍스트로 반환.',
       inputSchema: {
         type: 'object' as const,
         properties: {
@@ -362,7 +362,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new McpError(ErrorCode.InternalError, 'FIGMA_API_TOKEN 환경변수가 설정되지 않았습니다. MCP 서버 설정에 env.FIGMA_API_TOKEN을 추가해주세요.');
         }
 
-        // Use provided fileKey, or try to get it from the plugin
         let resolvedFileKey = args.fileKey as string | undefined;
         if (!resolvedFileKey) {
           const fileInfo = await sendToFigma('get_file_info') as { fileKey?: string };
@@ -377,7 +376,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         const fileKey = resolvedFileKey;
 
-        // Fetch comments via Figma REST API
         const res = await fetch(`https://api.figma.com/v1/files/${fileKey}/comments`, {
           headers: { 'X-Figma-Token': apiToken },
         });
@@ -406,20 +404,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'figma_export_node': {
         if (!args.nodeId) throw new McpError(ErrorCode.InvalidParams, 'nodeId가 필요합니다');
+        const exportFormat = (args.format as string)?.toUpperCase() ?? 'PNG';
         const data = (await sendToFigma(
           'export_node',
           {
             nodeId: args.nodeId as string,
-            format: args.format ?? 'PNG',
+            format: exportFormat,
             scale: clamp(Number(args.scale) || 2, 0.5, 4),
           },
-          60_000 // 60s timeout for exports
+          60_000
         )) as { base64: string; format: string };
+
+        // SVG는 텍스트 기반이므로 base64 디코딩 후 텍스트로 반환
+        // (Claude API가 SVG를 image로 처리하지 못함)
+        if (data.format === 'SVG') {
+          const svgText = Buffer.from(data.base64, 'base64').toString('utf-8');
+          return {
+            content: [{ type: 'text', text: svgText }],
+          };
+        }
 
         const mimeMap: Record<string, string> = {
           PNG: 'image/png',
           JPG: 'image/jpeg',
-          SVG: 'image/svg+xml',
         };
 
         return {
@@ -444,7 +451,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         const headers = { 'X-Figma-Token': apiToken, 'Content-Type': 'application/json' };
 
-        // 1. 답글 달기
         const replyRes = await fetch(`https://api.figma.com/v1/files/${args.fileKey}/comments`, {
           method: 'POST',
           headers,
@@ -455,9 +461,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new McpError(ErrorCode.InternalError, `답글 실패: ${replyRes.status} ${text}`);
         }
         const replyData = await replyRes.json() as { id: string };
-
-        // Note: Figma 공개 REST API에는 타인 댓글을 resolve하는 엔드포인트가 없습니다.
-        // 해결 완료 처리는 Figma UI에서 직접 해주세요.
 
         return {
           content: [{
@@ -482,7 +485,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new McpError(ErrorCode.InternalError, 'FIGMA_API_TOKEN 환경변수가 설정되지 않았습니다.');
         }
 
-        // Resolve fileKey
         let resolvedFileKey = args.fileKey as string | undefined;
         if (!resolvedFileKey) {
           const fileInfo = await sendToFigma('get_file_info') as { fileKey?: string };
@@ -492,7 +494,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new McpError(ErrorCode.InternalError, 'fileKey를 가져올 수 없습니다. fileKey 파라미터를 직접 전달해주세요.');
         }
 
-        // Fetch comments
         const res = await fetch(`https://api.figma.com/v1/files/${resolvedFileKey}/comments`, {
           headers: { 'X-Figma-Token': apiToken },
         });
@@ -502,10 +503,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         const data = await res.json() as { comments: FigmaComment[] };
 
-        // Filter unresolved only
         const unresolvedComments = data.comments.filter((c) => c.resolved_at == null);
 
-        // Group by thread (top-level comments with their replies)
         const topLevel = unresolvedComments.filter((c) => !c.parent_id);
         const replies = unresolvedComments.filter((c) => c.parent_id);
         const replyMap = new Map<string, FigmaComment[]>();
@@ -516,14 +515,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           replyMap.set(pid, list);
         }
 
-        // Collect unique node IDs
         const nodeIds = new Set<string>();
         for (const c of topLevel) {
           const nodeId = c.client_meta?.node_id;
           if (nodeId) nodeIds.add(nodeId);
         }
 
-        // Fetch node info for each unique nodeId (parallel, 10s timeout per node)
         const detail = (args.detail as string) ?? 'minimal';
         const nodeInfoMap = new Map<string, unknown>();
         const nodeIdArray = [...nodeIds];
@@ -540,7 +537,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           );
         }
 
-        // Build result
         const analyzed = topLevel.map((c) => {
           const nodeId = c.client_meta?.node_id;
           const entry: Record<string, unknown> = {
@@ -550,7 +546,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             createdAt: c.created_at,
           };
 
-          // Position
           if (nodeId) {
             entry.nodeId = nodeId;
             entry.position = c.client_meta?.node_offset ?? null;
@@ -558,7 +553,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             entry.canvasPosition = { x: c.client_meta.x, y: c.client_meta.y };
           }
 
-          // Replies
           const threadReplies = replyMap.get(c.id);
           if (threadReplies?.length) {
             entry.replies = threadReplies.map((r) => ({
@@ -568,7 +562,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             }));
           }
 
-          // Node info
           if (nodeId && nodeInfoMap.has(nodeId)) {
             entry.node = nodeInfoMap.get(nodeId);
           }
@@ -602,7 +595,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 // ─── Start ────────────────────────────────────────────────────────────────────
 
 function log(msg: string) {
-  // stderr so it doesn't interfere with MCP stdio protocol
   process.stderr.write(`[figma-mcp] ${msg}\n`);
 }
 
