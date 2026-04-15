@@ -1,5 +1,8 @@
 # Figma MCP Bridge
 
+> **⚠️ 이 저장소는 [blueberry-team/figma-dev-mode-for-free](https://github.com/blueberry-team/figma-dev-mode-for-free)로 이전되었습니다**  
+> **최신 업데이트 및 지원을 받으시려면 새 저장소를 이용해주세요.**
+
 > **Language / 언어 / 言語:** [English](./README.md) | [日本語](./README.ja.md)
 
 Figma 디자인 데이터를 Claude Code 및 Windsurf에서 직접 조회할 수 있는 MCP(Model Context Protocol) 브릿지.

@@ -1,5 +1,8 @@
 # Figma MCP Bridge
 
+> **⚠️ This repository has been moved to [blueberry-team/figma-dev-mode-for-free](https://github.com/blueberry-team/figma-dev-mode-for-free)**  
+> **Please use the new repository for the latest updates and support.**
+
 > **Language / 언어 / 言語:** [한국어](./README.ko.md) | [日本語](./README.ja.md)
 
 A bridge plugin that lets you query Figma design data directly from Claude Code and Windsurf via MCP (Model Context Protocol).

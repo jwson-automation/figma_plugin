@@ -1,5 +1,8 @@
 # Figma MCP Bridge
 
+> **⚠️ このリポジトリは [blueberry-team/figma-dev-mode-for-free](https://github.com/blueberry-team/figma-dev-mode-for-free) に移転しました**  
+> **最新のアップデートとサポートについては、新しいリポジトリをご利用ください。**
+
 > **Language / 언어 / 言語:** [English](./README.md) | [한국어](./README.ko.md)
 
 FigmaのデザインデータをClaude Code や WindsurfなどのAIコードエディタから直接取得できるMCP（Model Context Protocol）ブリッジプラグインです。
